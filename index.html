@@ -618,10 +618,18 @@ async function showPdfBlob(blob){
   try{const buf=await blob.arrayBuffer();pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;zoom=1;await renderPdf();}
   catch(e){$("#pdfbox").innerHTML='<div class="empty">PDF表示に失敗しました（初回はネット接続が必要）。<br>'+esc(String(e))+'</div>';}
 }
+// サイトに同梱した料金表PDF（アップロードが無ければこれを表示）
+const DEFAULT_PDF={"引越業者様":"hikkoshi.pdf","工房・調律師様":"kobo.pdf"};
 async function loadPdfFor(tname){
-  pdfDoc=null;const blob=await idbGet("pdf::"+tname);
-  if(blob){showPdfBlob(blob);}
-  else{$("#pdfbox").innerHTML='<div class="empty">「'+esc(tname)+'」のPDFは未読込です。<br>「⬆ PDF読込」から選択、またはこの枠にドラッグ＆ドロップしてください。<br>（一度読み込めば、次回以降も自動で表示されます）</div>';}
+  pdfDoc=null;
+  const blob=await idbGet("pdf::"+tname);
+  if(blob){showPdfBlob(blob);return;}
+  const def=DEFAULT_PDF[tname];
+  if(def){
+    $("#pdfbox").innerHTML='<div class="empty">料金表を読み込み中…</div>';
+    try{const r=await fetch(def,{cache:"no-cache"});if(r.ok){const b=await r.blob();showPdfBlob(b);return;}}catch(e){}
+  }
+  $("#pdfbox").innerHTML='<div class="empty">「'+esc(tname)+'」のPDFは未読込です。<br>「⬆ PDF読込」から選択、またはこの枠にドラッグ＆ドロップしてください。<br>（一度読み込めば、次回以降も自動で表示されます）</div>';
 }
 async function acceptPdf(file){
   if(!file||(!/pdf$/i.test(file.type)&&!/\.pdf$/i.test(file.name))){alert("PDFファイルを選んでください。");return;}
