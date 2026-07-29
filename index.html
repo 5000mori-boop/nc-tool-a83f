@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>料金検索 — ナイスキャリード</title>
+<style>
+  :root{
+    --navy:#1f3a5f; --navy2:#274b7a; --line:#d8e0ea; --muted:#6b7787;
+    --bg:#eef2f7; --amber:#c98a12; --ok:#1e8a5a; --danger:#c0392b; --panel:#fff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:"Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;background:var(--bg);color:#1b2430;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .top{display:flex;align-items:center;gap:16px;padding:10px 18px;background:var(--navy);color:#fff;flex-shrink:0}
+  .brand{font-size:1.15rem;font-weight:800;letter-spacing:.02em}
+  .brand span{font-size:.72rem;font-weight:600;opacity:.75;margin-left:8px;letter-spacing:.14em}
+  .top .sp{flex:1}
+  .top select{font-size:.9rem;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid #3a5885;background:#fff;color:#1b2430}
+  .top .tlabel{font-size:.78rem;opacity:.8;margin-right:-8px}
+  .sheet{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,560px);gap:0;min-height:0}
+  .pane{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--panel)}
+  .pane.pdf{border-right:1px solid var(--line)}
+  .pane-h{display:flex;align-items:center;gap:8px;padding:9px 14px;background:#f2f5f9;border-bottom:1px solid var(--line);font-weight:800;font-size:.92rem;flex-shrink:0}
+  .pane-h .sp{flex:1}
+  .btn{font-size:.82rem;font-weight:700;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 11px;cursor:pointer;color:#1b2430}
+  .btn:hover{border-color:var(--navy)}
+  .btn.amber{background:var(--amber);color:#fff;border-color:var(--amber)}
+  .btn.navy{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .btn.gray{background:#eef1f5}
+  .btn.mini{font-size:.76rem;padding:4px 8px}
+  .btn.big{font-size:1.02rem;padding:12px;width:100%}
+  .up{position:relative;overflow:hidden;display:inline-block}
+  .up input{position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer}
+  .pdfbox{flex:1;overflow:auto;background:#5b6675;padding:10px;text-align:center}
+  .pdfbox .empty{color:#e8edf3;padding:60px 20px;line-height:1.7}
+  .pdfbox canvas{display:block;margin:0 auto 10px;box-shadow:0 2px 10px rgba(0,0,0,.35);background:#fff;border-radius:2px}
+  .zlbl{font-size:.8rem;min-width:44px;text-align:center;font-variant-numeric:tabular-nums}
+  .calcbody{flex:1;overflow:auto;padding:14px 16px}
+  .free{background:#f6f9ff;border:1px solid #cfe0f5;border-radius:12px;padding:12px}
+  .free label.fl{display:block;font-size:.8rem;font-weight:800;color:var(--navy);margin-bottom:6px}
+  .free textarea{width:100%;min-height:84px;font-size:.9rem;font-family:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:9px;resize:vertical;line-height:1.5}
+  .free .frow{display:flex;gap:8px;margin-top:8px}
+  #detected{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:.78rem;font-weight:700;background:#e6f0ff;border:1px solid #b9d3f5;color:#1c4a86;border-radius:999px;padding:4px 10px}
+  .chip.warn{background:#fff2f2;border-color:#f2b8b8;color:#a52222}
+  .chip.none{background:#f0f2f5;border-color:#dde2e8;color:#7a8595;font-weight:600}
+  hr.sep{border:none;border-top:1px dashed var(--line);margin:14px 0}
+  .fgroup{margin-bottom:12px}
+  .fgroup>label.fl{display:block;font-size:.75rem;font-weight:800;color:var(--muted);margin-bottom:4px;letter-spacing:.03em}
+  select,input[type=number],input[type=text]{font-size:.9rem;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:#fff}
+  .fgroup>select{width:100%}
+  input[type=number]{width:84px}
+  .row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+  .chk{display:inline-flex;align-items:center;gap:5px;font-size:.85rem;background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 9px;cursor:pointer}
+  .chk input{margin:0}
+  .num{display:inline-flex;align-items:center;gap:5px;font-size:.85rem}
+  .hintline{font-size:.74rem;color:var(--muted);margin-top:3px}
+  /* 発着ブロック */
+  .ep{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:#fbfdff}
+  .ep.o{border-left:4px solid #2f80ed}
+  .ep.d{border-left:4px solid #eb5757}
+  .ep-h{font-size:.82rem;font-weight:800;margin-bottom:7px}
+  .ep .prefsel{min-width:120px}
+  .ep .citysel{flex:1;min-width:120px}
+  .caplbl{font-size:.72rem;color:var(--muted)}
+  .modebar{display:inline-block;font-size:.8rem;font-weight:800;border-radius:999px;padding:4px 12px;margin-bottom:10px}
+  .modebar.kanto{background:#e7f3ff;color:#1c5aa6;border:1px solid #b9d3f5}
+  .modebar.zenkoku{background:#fff3e0;color:#9a5b00;border:1px solid #f0cf8a}
+  .modebar.soudan{background:#fdeaea;color:#a52222;border:1px solid #f2b8b8}
+  #result{margin-top:14px}
+  .total{font-size:2rem;font-weight:900;color:var(--navy);letter-spacing:.02em}
+  .total small{font-size:.8rem;font-weight:700;color:var(--muted)}
+  .taxinc{font-size:1.2rem;font-weight:800;color:#1e8a5a;margin-top:3px}
+  .taxinc span{font-size:.72rem;font-weight:600;color:var(--muted)}
+  .bd{width:100%;border-collapse:collapse;margin-top:10px;font-size:.88rem}
+  .bd td{border-bottom:1px solid #eef1f5;padding:7px 4px}
+  .bd td.r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .bd tr.sum td{border-top:2px solid var(--navy);border-bottom:none;font-weight:900;font-size:1.05rem;padding-top:9px}
+  .bd tr.mul td{color:#b26a00}
+  .bd tr.grp td{color:#5a6675;font-size:.78rem;padding-top:10px;font-weight:700}
+  .note{margin-top:14px;font-size:.78rem;color:#8a5a00;background:#fff8e6;border:1px solid #f0d98a;border-radius:9px;padding:10px 12px;line-height:1.6}
+  .note.warn{color:#a52222;background:#fff2f2;border-color:#f2b8b8}
+  @media(max-width:900px){
+    .sheet{grid-template-columns:1fr;grid-auto-rows:minmax(300px,auto)}
+    .pane.pdf{border-right:none;border-bottom:1px solid var(--line)}
+    body{overflow:auto;height:auto}
+  }
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">💰 料金検索 <span>NICE CARRIED</span></div>
+    <div class="sp"></div>
+    <span class="tlabel">料金表</span>
+    <select id="table"></select>
+  </header>
+
+  <div class="sheet">
+    <!-- 左：PDF料金表 -->
+    <section class="pane pdf">
+      <div class="pane-h">
+        📄 <span id="pdfTitle">料金表</span>
+        <div class="sp"></div>
+        <label class="btn amber mini up">⬆ PDF読込<input type="file" id="pdfFile" accept="application/pdf,.pdf"></label>
+        <button class="btn gray mini" id="zout">－</button>
+        <span class="zlbl" id="zlbl">100%</span>
+        <button class="btn gray mini" id="zin">＋</button>
+      </div>
+      <div class="pdfbox" id="pdfbox">
+        <div class="empty">この料金表のPDFを読み込むと、ここに表示されます。<br>右で計算した金額を、この表と突き合わせて確認できます。<br><br>「⬆ PDF読込」から選択、またはこの枠にドラッグ＆ドロップ。</div>
+      </div>
+    </section>
+
+    <!-- 右：見積計算 -->
+    <section class="pane calc">
+      <div class="pane-h">🔍 見積計算（引越業者様）</div>
+      <div class="calcbody">
+        <!-- 自由入力 -->
+        <div class="free">
+          <label class="fl">✉ 自由入力（メール・FAX本文を貼り付け）</label>
+          <textarea id="free" placeholder="例）グランドピアノ（GP1-3）を埼玉県熊谷市（1階）から千葉県千葉市（1階）まで。階段作業あり、時間指定希望。"></textarea>
+          <div class="frow">
+            <button class="btn navy" id="parseBtn" style="flex:1">📋 貼り付け内容を解析して自動反映</button>
+            <button class="btn gray" id="clearBtn">クリア</button>
+          </div>
+          <div id="detected"></div>
+        </div>
+
+        <hr class="sep">
+
+        <div id="modebar"></div>
+
+        <div class="fgroup"><label class="fl">商品</label>
+          <select id="prod">
+            <optgroup label="ピアノ"><option>UP</option><option>GP1-3</option><option>GP4-5</option><option>GP6-7</option><option>セミコン・フルコン</option></optgroup>
+            <optgroup label="金庫・複合機（アップライト料金に対して重量加算）"><option>金庫</option><option>複合機（コピー機）</option></optgroup>
+          </select></div>
+        <div class="fgroup" id="weightbox" style="display:none"><label class="fl">重量（金庫・複合機）</label>
+          <select id="weight">
+            <option value="150">〜150kg（＋0・UP扱い）</option>
+            <option value="200">〜200kg（＋5,000・UP扱い）</option>
+            <option value="250">〜250kg（＋10,000・UP扱い）</option>
+            <option value="300">〜300kg（＋15,000・GP1-3扱い）</option>
+            <option value="400">〜400kg（＋27,000・GP4-5扱い）</option>
+            <option value="500">〜500kg（＋37,000・別途協議）</option>
+          </select></div>
+
+        <!-- 引取地（発地） -->
+        <div class="ep o">
+          <div class="ep-h">🚚 引取地（発地）</div>
+          <div class="row">
+            <select id="o_pref" class="prefsel"></select>
+            <input type="text" id="o_city" class="citysel" placeholder="市区町村（例：熊谷市）">
+          </div>
+          <div class="row" style="margin-top:7px">
+            <span class="num"><span id="o_kmlbl">県庁から</span> <input type="number" id="o_km" value="0" min="0"> km</span>
+            <button class="btn gray mini" id="o_capmap">🧮 県庁からの距離を自動計算</button>
+            <span class="caplbl" id="o_caplbl"></span><span class="caplbl" id="o_stat" style="color:#a52222"></span>
+          </div>
+        </div>
+
+        <!-- 届け先（着地） -->
+        <div class="ep d">
+          <div class="ep-h">🏁 届け先（着地）</div>
+          <div class="row">
+            <select id="d_pref" class="prefsel"></select>
+            <input type="text" id="d_city" class="citysel" placeholder="市区町村（例：千葉市）">
+          </div>
+          <div class="row" style="margin-top:7px">
+            <span class="num"><span id="d_kmlbl">県庁から</span> <input type="number" id="d_km" value="0" min="0"> km</span>
+            <button class="btn gray mini" id="d_capmap">🧮 県庁からの距離を自動計算</button>
+            <span class="caplbl" id="d_caplbl"></span><span class="caplbl" id="d_stat" style="color:#a52222"></span>
+          </div>
+        </div>
+
+        <!-- 移動距離 -->
+        <div class="fgroup" id="movebox">
+          <label class="fl">移動距離（発着間・関東内のみ加算）</label>
+          <div class="row">
+            <span class="num"><input type="number" id="move_km" value="0" min="0"> km</span>
+            <button class="btn navy mini" id="mapbtn">🧮 移動距離を自動計算</button>
+            <span class="caplbl" id="move_stat" style="color:#a52222"></span>
+          </div>
+          <div class="hintline">発地・着地の市区町村を入れて押すと、地図の道路距離を自動取得して反映します（関東どうしのみ加算・0〜10km=5,000〜）。</div>
+        </div>
+
+        <hr class="sep">
+        <div class="fgroup"><label class="fl">特殊作業</label>
+          <div class="row">
+            <label class="chk"><input type="checkbox" id="kaidan"> 階段/吊り</label>
+            <span class="num">階数 <input type="number" id="kaidan_n" value="2" min="1"> 階</span>
+            <span class="hintline" style="margin-top:0">※2階まで基本・3階目以降は階増し</span>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <span class="num">石段 <input type="number" id="ishidan" value="0" min="0"> 段</span>
+            <label class="chk"><input type="checkbox" id="ev"> エレベーター</label>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <span class="num">横持担ぎ <input type="number" id="yokomochi" value="0" min="0"> m<span class="hintline" style="margin:0 0 0 3px">(30m毎)</span></span>
+            <span class="num">人員追加 <input type="number" id="nin" value="0" min="0"> 名</span>
+          </div></div>
+
+        <div class="fgroup"><label class="fl">付帯作業</label>
+          <div class="row">
+            <label class="chk"><input type="checkbox" id="time"> 時間指定</label>
+            <label class="chk"><input type="checkbox" id="shitami"> 下見</label>
+            <label class="chk"><input type="checkbox" id="shukin"> 代行集金</label></div>
+          <div class="row" style="margin-top:6px">
+            <span class="num">クリーニング <select id="clean" style="width:auto"><option value="">なし</option><option value="UP">UP</option><option value="GP">GP</option></select></span>
+            <span class="num">調律 <select id="tune" style="width:auto"><option value="">なし</option><option value="UP">UP</option><option value="GP">GP</option></select></span></div></div>
+
+        <div class="fgroup"><label class="fl">協力会社手配（御社=ナイスキャリードの集荷/返却料金）</label>
+          <div class="row">
+            <label class="chk"><input type="checkbox" id="kyoryoku"> 協力会社手配</label>
+            <label class="chk"><input type="checkbox" id="shuka2"> 集荷</label>
+            <label class="chk"><input type="checkbox" id="henkyaku"> 返却</label>
+            <span class="hintline" style="margin:0">UP系5,000／GP系10,000（各件）</span>
+          </div></div>
+        <hr class="sep">
+        <div class="fgroup"><label class="fl">割増</label>
+          <div class="row">
+            <label class="chk"><input type="checkbox" id="winter"> 冬季割増（120%・対象地域/12〜3月）</label>
+            <label class="chk"><input type="checkbox" id="luxury"> 高級品（スタインウェイ等 150%）</label></div></div>
+
+        <button class="btn navy big" id="calcBtn" style="margin-top:6px">🔍 計算する</button>
+        <div id="result"><div class="hintline" style="padding:14px 2px">発地・着地などを入力（または上の自由入力に貼り付け）して計算すると、金額と内訳が表示されます。</div></div>
+      </div>
+    </section>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function fmt(n){return "¥"+Math.round(n).toLocaleString("ja-JP");}
+function normalize(s){return String(s||"").replace(/[０-９Ａ-Ｚａ-ｚ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/　/g," ");}
+
+/* ============ 料金データ（引越業者様＝ユーザー提示ルール／工房は数値要確認） ============ */
+const KANTO=["東京","埼玉","神奈川","千葉","茨城","栃木","群馬"];
+const ZORDER=["北海道","青森","岩手","秋田","山形","宮城","福島","新潟","長野","山梨","静岡","富山","石川","福井","愛知","岐阜","三重","滋賀","京都","大阪","兵庫","奈良","和歌山","岡山","広島","島根","鳥取","山口","香川","徳島","愛媛","高知","福岡","佐賀","大分","長崎","熊本","宮崎","鹿児島","沖縄"];
+// 県庁所在地（市）
+const CAP={"北海道":"札幌市","青森":"青森市","岩手":"盛岡市","秋田":"秋田市","山形":"山形市","宮城":"仙台市","福島":"福島市","茨城":"水戸市","栃木":"宇都宮市","群馬":"前橋市","埼玉":"さいたま市","千葉":"千葉市","東京":"新宿区","神奈川":"横浜市","新潟":"新潟市","富山":"富山市","石川":"金沢市","福井":"福井市","山梨":"甲府市","長野":"長野市","岐阜":"岐阜市","静岡":"静岡市","愛知":"名古屋市","三重":"津市","滋賀":"大津市","京都":"京都市","大阪":"大阪市","兵庫":"神戸市","奈良":"奈良市","和歌山":"和歌山市","鳥取":"鳥取市","島根":"松江市","岡山":"岡山市","広島":"広島市","山口":"山口市","徳島":"徳島市","香川":"高松市","愛媛":"松山市","高知":"高知市","福岡":"福岡市","佐賀":"佐賀市","長崎":"長崎市","熊本":"熊本市","大分":"大分市","宮崎":"宮崎市","鹿児島":"鹿児島市","沖縄":"那覇市"};
+const TABLES={
+ "引越業者様":{
+   kanto:{"東京":25000,"埼玉":25000,"神奈川":28000,"千葉":28000,"茨城":33000,"栃木":33000,"群馬":33000},
+   zenkoku:{"北海道":50000,"青森":59000,"岩手":53000,"秋田":58000,"山形":49000,"宮城":44000,"福島":43000,"新潟":40000,"長野":43000,"山梨":null,"静岡":41000,"富山":49000,"石川":47000,"福井":43000,"愛知":39000,"岐阜":45000,"三重":45000,"滋賀":45000,"京都":41000,"大阪":41000,"兵庫":45000,"奈良":45000,"和歌山":47000,"岡山":42000,"広島":44000,"島根":53000,"鳥取":51000,"山口":45000,"香川":51000,"徳島":54000,"愛媛":61000,"高知":60000,"福岡":47000,"佐賀":54000,"大分":60000,"長崎":60000,"熊本":57000,"宮崎":63000,"鹿児島":63000,"沖縄":null},
+   kencho:{a2150:5000,a5170:8000},move:{m10:5000,m30:7000,m50:10000,m70:12000,base71:12000},zenFreeKm:20,chibaIbarakiNC:false,ishidanType:"eng",
+   special:{"UP":{kaidan:12000,kaimashi:6000,ishi6:6000,ishi5:5000,ev:2000,yoko:null,nin:15000},"GP1-3":{kaidan:18000,kaimashi:10000,ishi6:8000,ishi5:10000,ev:5000,yoko:15000,nin:20000},"GP4-5":{kaidan:21000,kaimashi:17000,ishi6:13000,ishi5:12000,ev:8000,yoko:24000,nin:20000},"GP6-7":null,"セミコン・フルコン":null},
+   futai:{time:3000,shitami:10000,shukin:2000,cleanUP:38000,cleanGP:45000,tuneUP:12000,tuneGP:15000}},
+ "工房・調律師様":{
+   kanto:{"東京":21000,"埼玉":21000,"神奈川":24000,"千葉":21000,"茨城":21000,"栃木":27000,"群馬":27000},
+   zenkoku:{"北海道":49000,"青森":58000,"岩手":52000,"秋田":57000,"山形":48000,"宮城":43000,"福島":42000,"新潟":39000,"長野":42000,"山梨":null,"静岡":40000,"富山":48000,"石川":46000,"福井":42000,"愛知":38000,"岐阜":44000,"三重":44000,"滋賀":44000,"京都":40000,"大阪":40000,"兵庫":44000,"奈良":44000,"和歌山":46000,"岡山":41000,"広島":43000,"島根":52000,"鳥取":50000,"山口":44000,"香川":50000,"徳島":53000,"愛媛":60000,"高知":59000,"福岡":46000,"佐賀":53000,"大分":59000,"長崎":59000,"熊本":56000,"宮崎":62000,"鹿児島":62000,"沖縄":null},
+   kencho:{a2150:3000,a5170:6000},move:{m10:3000,m30:5000,m50:8000,m70:10000,base71:10000},zenFreeKm:30,chibaIbarakiNC:true,ishidanType:"kobo",
+   special:{"UP":{kaidan:8000,kaimashi:5000,ishi6:5000,ishi11:8000,ishi16:5000,ev:2000,yoko:8000,nin:12000},"GP1-3":{kaidan:13000,kaimashi:7000,ishi6:7000,ishi11:13000,ishi16:7000,ev:5000,yoko:13000,nin:15000},"GP4-5":{kaidan:16000,kaimashi:9000,ishi6:9000,ishi11:16000,ishi16:9000,ev:8000,yoko:21000,nin:15000},"GP6-7":null,"セミコン・フルコン":null},
+   futai:{time:3000,shitami:3000,shukin:2000,cleanUP:38000,cleanGP:45000,tuneUP:12000,tuneGP:15000}}
+};
+const GRAND={"UP":1,"GP1-3":1.5,"GP4-5":1.8,"GP6-7":2.5,"セミコン・フルコン":null,"金庫":1,"複合機（コピー機）":1};
+// 金庫・複合機：アップライト(UP)料金＋重量加算。cat=特殊作業の適用商品区分（nullは別途協議）
+const HEAVY=["金庫","複合機（コピー機）"];
+const WEIGHT={"150":{add:0,cat:"UP"},"200":{add:5000,cat:"UP"},"250":{add:10000,cat:"UP"},"300":{add:15000,cat:"GP1-3"},"400":{add:27000,cat:"GP4-5"},"500":{add:37000,cat:null}};
+const WINTER=["北海道","青森","秋田","岩手","山形","宮城","福島","新潟","福井","石川","富山","長野"];
+// 特殊作業料金は会社ごとに TABLES[..].special に格納（引越/工房で金額・石段構造が異なる）
+const NC_COORD=[35.84789,139.82488]; // ナイスキャリード（埼玉県草加市青柳3-22-1）
+
+/* 距離テーブル（ユーザー確定） */
+// 県庁起点距離増し（会社別 K=T.kencho）：〜freeKm:0 / 21-50:a2150 / 51-70:a5170 / 71〜:都度(null)
+function kenchoAdd(km,K,freeKm){km=+km||0;freeKm=freeKm||20;if(km<=freeKm)return 0;if(km<=50)return K.a2150;if(km<=70)return K.a5170;return null;}
+// 関東内 移動料金（会社別 M=T.move）：0-10/11-30/31-50/51-70/71〜(base71＋超過10kmごと+1,000)
+function moveAdd(km,M){km=+km||0;if(km<=0)return 0;if(km<=10)return M.m10;if(km<=30)return M.m30;if(km<=50)return M.m50;if(km<=70)return M.m70;return M.base71+Math.ceil((km-70)/10)*1000;}
+function isKanto(p){return KANTO.indexOf(p)>=0;}
+function prefFull(p){if(p==="北海道")return "北海道";if(p==="東京")return "東京都";if(p==="大阪")return "大阪府";if(p==="京都")return "京都府";return p+"県";}
+
+/* ============ 初期化：セレクト生成 ============ */
+Object.keys(TABLES).forEach(t=>$("#table").appendChild(new Option(t,t)));
+function fillPref(sel){
+  const g1=document.createElement("optgroup");g1.label="関東";KANTO.forEach(p=>g1.appendChild(new Option(p,p)));
+  const g2=document.createElement("optgroup");g2.label="全国";ZORDER.forEach(p=>g2.appendChild(new Option(p,p)));
+  sel.appendChild(g1);sel.appendChild(g2);
+}
+fillPref($("#o_pref"));fillPref($("#d_pref"));
+$("#o_pref").value="埼玉";$("#d_pref").value="千葉";
+function isNCorigin(side){const p=$("#"+side+"_pref").value;return val("table")==="工房・調律師様"&&(p==="千葉"||p==="茨城");}
+function capBtnLabel(side){return isNCorigin(side)?"🧮 NC草加からの距離を自動計算":"🧮 県庁からの距離を自動計算";}
+function updateCap(side){const p=$("#"+side+"_pref").value;const nc=isNCorigin(side);
+  $("#"+side+"_caplbl").textContent=nc?"起点：NC(草加)":("県庁："+(CAP[p]||"-"));
+  const kl=$("#"+side+"_kmlbl");if(kl)kl.textContent=nc?"NC草加から":"県庁から";
+  const bt=$("#"+side+"_capmap");if(bt&&!bt.disabled)bt.textContent=capBtnLabel(side);
+}
+updateCap("o");updateCap("d");
+$("#o_pref").onchange=()=>{updateCap("o");refreshMode();onLocChange("o");};
+$("#d_pref").onchange=()=>{updateCap("d");refreshMode();onLocChange("d");};
+function refreshMode(){
+  const oK=isKanto($("#o_pref").value),dK=isKanto($("#d_pref").value);
+  const mb=$("#modebar");
+  if(oK&&dK){mb.className="modebar kanto";mb.textContent="関東内モード：基本料金＝高い方の県 ＋ 移動距離加算";}
+  else if(oK!==dK){mb.className="modebar zenkoku";mb.textContent="全国輸送モード：基本料金＝関東基準＋全国輸送料金の合算（移動距離加算なし）";}
+  else{mb.className="modebar soudan";mb.textContent="要相談：発着とも関東外（自動計算対象外・参考値）";}
+}
+refreshMode();
+$("#table").onchange=()=>{$("#pdfTitle").textContent=$("#table").value+" 料金表";loadPdfFor($("#table").value);updateCap("o");updateCap("d");compute();};
+
+/* ============ 計算 ============ */
+function val(id){const el=$("#"+id);return el?el.value:"";}
+function chk(id){const el=$("#"+id);return !!(el&&el.checked);}
+function compute(){
+  const tname=val("table"),T=TABLES[tname];if(!T)return;
+  const prod=val("prod"),gm=GRAND[prod];
+  const heavy=HEAVY.indexOf(prod)>=0,wInfo=heavy?(WEIGHT[val("weight")]||WEIGHT["150"]):null;
+  const oP=val("o_pref"),dP=val("d_pref");
+  const oKm=+val("o_km")||0,dKm=+val("d_km")||0,moveKm=+val("move_km")||0;
+  const oK=isKanto(oP),dK=isKanto(dP);
+  const rows=[],warn=[];let total=0,mode="",baseTransport=0;
+
+  // ① 基本料金
+  rows.push(["── 基本料金 ──","","grp"]);
+  if(oK&&dK){
+    mode="関東内";
+    const bo=T.kanto[oP],bd=T.kanto[dP];baseTransport=Math.max(bo,bd);const which=(bd>=bo)?dP:oP;
+    rows.push(["基準価格（"+which+"＝発着で高い方・UP）",baseTransport]);
+  }else if(oK!==dK){
+    mode="全国輸送";
+    const kP=oK?oP:dP, zP=oK?dP:oP;const kb=T.kanto[kP]||0,zb=T.zenkoku[zP];
+    rows.push(["関東基準価格（"+kP+"・UP）",kb]);baseTransport+=kb;
+    if(zb==null){warn.push(zP+"は「都度見積」区分のため全国輸送料金を自動計算できません。原本で確認してください。");}
+    else{rows.push(["全国輸送料金（"+zP+"・UP）",zb]);baseTransport+=zb;}
+  }else{
+    mode="要相談";
+    warn.push("発着ともに関東外です。この区分は自動計算対象外（都度見積）。参考として両県の全国輸送料金を合算表示します。");
+    const zo=T.zenkoku[oP],zd=T.zenkoku[dP];
+    if(zo!=null){rows.push(["全国輸送料金（"+oP+"）",zo]);baseTransport+=zo;}
+    if(zd!=null){rows.push(["全国輸送料金（"+dP+"）",zd]);baseTransport+=zd;}
+  }
+  total+=baseTransport;
+
+  // ② 重量加算（金庫・複合機）または グランド割増（ピアノ）
+  if(heavy){
+    rows.push(["── 金庫・複合機 重量加算 ──","","grp"]);
+    const wk=val("weight");
+    rows.push(["重量加算（〜"+wk+"kg・"+(wInfo.cat||"別途協議")+"扱い）",wInfo.add]);total+=wInfo.add;
+    if(wInfo.cat===null)warn.push("〜500kg は「別途協議」区分です。金額・特殊作業とも原本で協議してください。");
+  }else{
+    if(gm==null){warn.push(prod+"は「都度見積」です。割増率は原本で確認してください。");}
+    else if(gm!==1){const add=baseTransport*(gm-1);rows.push(["グランド割増（"+prod+" ×"+gm+"）",add,"mul"]);total+=add;}
+  }
+
+  // ③ 県庁距離加算（発・着それぞれ）※全国側は無料圏kmが会社別、工房の千葉茨城はNC起点
+  const eps=[["引取地",oP,oKm],["届け先",dP,dKm]];
+  let epHead=false;
+  eps.forEach(([lbl,p,km])=>{
+    if(km>0){const free=isKanto(p)?20:T.zenFreeKm;const a=kenchoAdd(km,T.kencho,free);
+      const from=(T.chibaIbarakiNC&&(p==="千葉"||p==="茨城"))?"NC(草加)から":"県庁から";
+      if(!epHead){rows.push(["── 起点距離加算 ──","","grp"]);epHead=true;}
+      if(a==null){warn.push(lbl+"（"+p+"）の起点距離71km超は都度見積です。");}
+      else if(a>0){rows.push([lbl+"（"+p+" "+from+km+"km）",a]);total+=a;}
+      else{rows.push([lbl+"（"+p+" "+from+km+"km）",0]);}
+    }
+  });
+
+  // ④ 移動距離加算（関東内のみ）
+  if(mode==="関東内"){
+    rows.push(["── 移動距離加算（関東内）──","","grp"]);
+    if(moveKm>0){const a=moveAdd(moveKm,T.move);rows.push(["移動距離加算（"+moveKm+"km）",a]);total+=a;}
+    else{warn.push("関東内の移動距離が未入力です。「🧮 移動距離を自動計算」ボタンを押すか、手入力してください（0〜10kmでも移動料金が発生します）。");}
+  }
+
+  // ⑤ 特殊作業・付帯（金庫・複合機は重量区分の商品区分で特殊作業を計算）
+  const specialProd=heavy?wInfo.cat:prod;
+  const S=(specialProd==null)?null:T.special[specialProd];
+  const F=T.futai;const opt=[];
+  if(S===null){
+    if(chk("kaidan")||(+val("ishidan"))>0||chk("ev")||(+val("yokomochi"))>0||(+val("nin"))>0)
+      warn.push((heavy?"この重量区分（別途協議）":prod)+"の特殊作業料金は「都度見積」です。原本で確認してください。");
+  }else{
+    // 階段/吊り＋階増し（2回まで基本・3回目以降は1回ごとに階増し）
+    if(chk("kaidan")){opt.push(["階段/吊り",S.kaidan]);const n=+val("kaidan_n")||0;if(n>2)opt.push(["階増し（"+(n-2)+"階分×"+fmt(S.kaimashi)+"）",S.kaimashi*(n-2)]);}
+    // 石段（会社で構造が違う：引越=6〜10段＋5段毎／工房=6〜10段・11〜15段・16段〜10段毎）
+    const steps=+val("ishidan")||0;
+    if(steps>0){let ishi=0,lbl="石段（"+steps+"段）";
+      if(T.ishidanType==="kobo"){
+        if(steps<=10){ishi=S.ishi6;}
+        else if(steps<=15){ishi=S.ishi11;}
+        else{const ex=Math.ceil((steps-15)/10);ishi=S.ishi11+ex*S.ishi16;lbl="石段（"+steps+"段：11〜15段＋16段〜10段毎×"+ex+"）";}
+      }else{
+        if(steps<=5){ishi=S.ishi5;}
+        else if(steps<=10){ishi=S.ishi6;}
+        else{const ex=Math.ceil((steps-10)/5);ishi=S.ishi6+ex*S.ishi5;lbl="石段（"+steps+"段：6〜10段＋5段毎×"+ex+"）";}
+      }
+      opt.push([lbl,ishi]);
+    }
+    if(chk("ev"))opt.push(["エレベーター",S.ev]);
+    // 横持担ぎ（30m毎）
+    const ym=+val("yokomochi")||0;
+    if(ym>0){if(S.yoko==null){warn.push(prod+"の横持担ぎ料金は表に記載がありません。原本で確認してください。");}else{const u=Math.ceil(ym/30);opt.push(["横持担ぎ（"+ym+"m：30m毎×"+u+"）",S.yoko*u]);}}
+    const nin=+val("nin")||0;if(nin>0)opt.push(["人員追加 "+nin+"名",S.nin*nin]);
+  }
+  // 付帯
+  if(chk("time"))opt.push(["時間指定",F.time]);
+  if(chk("shitami"))opt.push(["下見",F.shitami]);
+  if(chk("shukin"))opt.push(["代行集金",F.shukin]);
+  const cl=val("clean");if(cl)opt.push(["クリーニング（"+cl+"）",cl==="UP"?F.cleanUP:F.cleanGP]);
+  const tu=val("tune");if(tu)opt.push(["調律（"+tu+"）",tu==="UP"?F.tuneUP:F.tuneGP]);
+  // 協力会社手配（御社=NC集荷/返却）UP系5,000・GP系10,000/件
+  if(chk("kyoryoku")){const fee=/^(GP|セミコン)/.test(prod)?10000:5000;const t2=fee===10000?"GP":"UP";
+    if(chk("shuka2"))opt.push(["協力会社 集荷（"+t2+"）",fee]);
+    if(chk("henkyaku"))opt.push(["協力会社 返却（"+t2+"）",fee]);}
+  if(opt.length){rows.push(["── 特殊作業・付帯 ──","","grp"]);opt.forEach(o=>{rows.push(o);total+=o[1];});}
+
+  if(chk("winter")||chk("luxury")){
+    rows.push(["── 割増 ──","","grp"]);
+    if(chk("winter")){const add=total*0.2;rows.push(["冬季割増（小計 ×1.2）",add,"mul"]);total+=add;}
+    if(chk("luxury")){const add=total*0.5;rows.push(["高級品割増（小計 ×1.5）",add,"mul"]);total+=add;}
+  }
+
+  // 描画
+  let html='<span class="modebar '+(mode==="関東内"?"kanto":mode==="全国輸送"?"zenkoku":"soudan")+'">'+esc(mode)+'</span>';
+  html+='<div class="total">'+fmt(total)+' <small>（税別・試算）</small></div>';
+  html+='<div class="taxinc">税込 '+fmt(total*1.1)+' <span>（消費税10%）</span></div>';
+  html+='<table class="bd">';
+  rows.forEach(r=>{
+    if(r[2]==="grp"){html+='<tr class="grp"><td colspan="2">'+esc(r[0])+'</td></tr>';return;}
+    html+='<tr class="'+(r[2]||"")+'"><td>'+esc(r[0])+'</td><td class="r">'+fmt(r[1])+'</td></tr>';
+  });
+  html+='<tr class="sum"><td>合計（税別）</td><td class="r">'+fmt(total)+'</td></tr></table>';
+  if(warn.length)html+='<div class="note warn"><b>⚠ 要確認</b><br>'+warn.map(esc).join("<br>")+'</div>';
+  html+='<div class="note">これは<b>試算</b>です。金額は請求に直結します。左のPDF料金表（<b>'+esc(tname)+'</b>）と必ず突き合わせて最終確認してください。</div>';
+  $("#result").innerHTML=html;
+}
+$("#calcBtn").onclick=compute;
+
+/* ============ 距離の自動計算（バックグラウンド／OpenStreetMap系・キー不要） ============ */
+// 県庁所在地の座標 [lat,lon]
+const CAPLL={"北海道":[43.0642,141.3469],"青森":[40.8244,140.7400],"岩手":[39.7036,141.1527],"宮城":[38.2688,140.8721],"秋田":[39.7186,140.1024],"山形":[38.2404,140.3633],"福島":[37.7500,140.4676],"茨城":[36.3418,140.4468],"栃木":[36.5657,139.8836],"群馬":[36.3907,139.0604],"埼玉":[35.8570,139.6489],"千葉":[35.6073,140.1063],"東京":[35.6896,139.6917],"神奈川":[35.4478,139.6425],"新潟":[37.9026,139.0236],"富山":[36.6953,137.2114],"石川":[36.5947,136.6256],"福井":[36.0652,136.2216],"山梨":[35.6642,138.5686],"長野":[36.6513,138.1810],"岐阜":[35.3912,136.7223],"静岡":[34.9769,138.3831],"愛知":[35.1802,136.9066],"三重":[34.7303,136.5086],"滋賀":[35.0045,135.8686],"京都":[35.0116,135.7681],"大阪":[34.6863,135.5200],"兵庫":[34.6913,135.1830],"奈良":[34.6851,135.8329],"和歌山":[34.2260,135.1675],"鳥取":[35.5039,134.2377],"島根":[35.4723,133.0505],"岡山":[34.6618,133.9350],"広島":[34.3966,132.4596],"山口":[34.1859,131.4714],"徳島":[34.0658,134.5593],"香川":[34.3401,134.0434],"愛媛":[33.8416,132.7657],"高知":[33.5597,133.5311],"福岡":[33.6064,130.4181],"佐賀":[33.2494,130.2988],"長崎":[32.7448,129.8737],"熊本":[32.7898,130.7417],"大分":[33.2382,131.6126],"宮崎":[31.9111,131.4239],"鹿児島":[31.5602,130.5581],"沖縄":[26.2124,127.6809]};
+const geoCache={};
+async function geocode(q){
+  if(geoCache[q]!==undefined)return geoCache[q];
+  try{
+    const r=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=jp&q="+encodeURIComponent(q));
+    const j=await r.json();const c=(j&&j[0])?[parseFloat(j[0].lat),parseFloat(j[0].lon)]:null;
+    geoCache[q]=c;return c;
+  }catch(e){return null;}
+}
+async function getCoord(pref,city){
+  city=(city||"").trim();
+  if(!city)return CAPLL[pref]||null;
+  const c=await geocode(prefFull(pref)+city);
+  return c||CAPLL[pref]||null;
+}
+async function drivingKm(a,b){
+  const r=await fetch("https://router.project-osrm.org/route/v1/driving/"+a[1]+","+a[0]+";"+b[1]+","+b[0]+"?overview=false");
+  const j=await r.json();
+  if(j&&j.routes&&j.routes[0])return j.routes[0].distance/1000;
+  throw new Error("ルートを取得できませんでした");
+}
+function busy(btn,on,label){if(on){btn.dataset.old=btn.textContent;btn.textContent="計算中…";btn.disabled=true;}else{btn.textContent=label||btn.dataset.old;btn.disabled=false;}}
+function setStat(id,msg){const el=$("#"+id);if(el)el.textContent=msg||"";}
+async function autoCapDist(side,silent){
+  const p=$("#"+side+"_pref").value,city=$("#"+side+"_city").value.trim(),btn=$("#"+side+"_capmap");
+  if(!city){if(!silent)alert("市区町村を入力してから押してください（県庁所在地からの距離を自動計算します）。");return false;}
+  busy(btn,true);setStat(side+"_stat","計算中…");
+  try{
+    const dest=await getCoord(p,city);if(!dest)throw new Error("地点を特定できませんでした");
+    const origin=(val("table")==="工房・調律師様"&&(p==="千葉"||p==="茨城"))?NC_COORD:CAPLL[p];
+    const km=await drivingKm(origin,dest);$("#"+side+"_km").value=Math.round(km);setStat(side+"_stat","");compute();return true;
+  }catch(e){setStat(side+"_stat","自動取得に失敗（手入力できます）");if(!silent)alert("距離の自動取得に失敗しました。ネット接続をご確認のうえ、手入力してください。\n"+e);return false;}
+  finally{busy(btn,false,capBtnLabel(side));}
+}
+async function autoMove(silent){
+  const btn=$("#mapbtn");busy(btn,true);setStat("move_stat","計算中…");
+  try{
+    const a=await getCoord($("#o_pref").value,$("#o_city").value);
+    const b=await getCoord($("#d_pref").value,$("#d_city").value);
+    if(!a||!b)throw new Error("地点を特定できませんでした");
+    const km=await drivingKm(a,b);$("#move_km").value=Math.round(km);setStat("move_stat","");compute();return true;
+  }catch(e){setStat("move_stat","自動取得に失敗（手入力できます）");if(!silent)alert("距離の自動取得に失敗しました。ネット接続をご確認のうえ、手入力してください。\n"+e);return false;}
+  finally{busy(btn,false,"🧮 移動距離を自動計算");}
+}
+// 入力したら自動計算（ボタン不要）：市区町村を確定/都道府県を変更したら発火
+async function onLocChange(side){
+  const city=$("#"+side+"_city").value.trim();
+  if(city)await autoCapDist(side,true);
+  const oc=$("#o_city").value.trim(),dc=$("#d_city").value.trim();
+  if(oc&&dc)await autoMove(true);else compute();
+}
+// パーサー等からまとめて自動計算（skipMove=trueなら移動距離は本文優先で上書きしない）
+async function autoDistances(skipMove){
+  if($("#o_city").value.trim())await autoCapDist("o",true);
+  if($("#d_city").value.trim())await autoCapDist("d",true);
+  const oc=$("#o_city").value.trim(),dc=$("#d_city").value.trim();
+  if(!skipMove&&oc&&dc)await autoMove(true);else compute();
+}
+$("#o_capmap").onclick=()=>autoCapDist("o",false);
+$("#d_capmap").onclick=()=>autoCapDist("d",false);
+$("#mapbtn").onclick=()=>autoMove(false);
+$("#o_city").addEventListener("change",()=>onLocChange("o"));
+$("#d_city").addEventListener("change",()=>onLocChange("d"));
+// 商品に応じて重量欄の表示切替
+function updateProdUI(){$("#weightbox").style.display=(HEAVY.indexOf($("#prod").value)>=0)?"":"none";}
+$("#prod").addEventListener("change",updateProdUI);
+updateProdUI();
+// 協力会社手配ON→集荷/返却を自動チェック、OFF→外す
+$("#kyoryoku").addEventListener("change",()=>{const on=$("#kyoryoku").checked;$("#shuka2").checked=on;$("#henkyaku").checked=on;compute();});
+// フォームの変更で即再計算
+["prod","weight","o_km","d_km","move_km","kaidan","kaidan_n","ishidan","ev","yokomochi","nin","time","shitami","shukin","clean","tune","kyoryoku","shuka2","henkyaku","winter","luxury"].forEach(id=>{const el=$("#"+id);if(el)el.addEventListener("change",compute);});
+
+/* ============ 自由入力パーサー ============ */
+const PREF_OFFICIAL={"北海道":"北海道","青森県":"青森","岩手県":"岩手","宮城県":"宮城","秋田県":"秋田","山形県":"山形","福島県":"福島","茨城県":"茨城","栃木県":"栃木","群馬県":"群馬","埼玉県":"埼玉","千葉県":"千葉","東京都":"東京","神奈川県":"神奈川","新潟県":"新潟","富山県":"富山","石川県":"石川","福井県":"福井","山梨県":"山梨","長野県":"長野","岐阜県":"岐阜","静岡県":"静岡","愛知県":"愛知","三重県":"三重","滋賀県":"滋賀","京都府":"京都","大阪府":"大阪","兵庫県":"兵庫","奈良県":"奈良","和歌山県":"和歌山","鳥取県":"鳥取","島根県":"島根","岡山県":"岡山","広島県":"広島","山口県":"山口","徳島県":"徳島","香川県":"香川","愛媛県":"愛媛","高知県":"高知","福岡県":"福岡","佐賀県":"佐賀","長崎県":"長崎","熊本県":"熊本","大分県":"大分","宮崎県":"宮崎","鹿児島県":"鹿児島","沖縄県":"沖縄"};
+const CITY_MAP={"札幌":"北海道","仙台":"宮城","さいたま":"埼玉","横浜":"神奈川","名古屋":"愛知","京都市":"京都","大阪市":"大阪","神戸":"兵庫","広島市":"広島","北九州":"福岡","福岡市":"福岡","那覇":"沖縄","金沢":"石川"};
+// 都道府県名＋直後の市区町村をまとめて検出（助詞や県名の巻き込みを防ぐ）
+function detectLocations(t){
+  const names=Object.keys(PREF_OFFICIAL).sort((a,b)=>b.length-a.length);
+  const re=new RegExp("("+names.join("|")+")([一-龥ぁ-ん]{1,6}?[市区町村])?","g");
+  const list=[];let m;
+  while((m=re.exec(t))){list.push({idx:m.index,pref:PREF_OFFICIAL[m[1]],city:m[2]||""});}
+  if(list.length<2){
+    for(const c in CITY_MAP){const i=t.indexOf(c);if(i>=0&&!list.some(l=>Math.abs(l.idx-i)<6||l.pref===CITY_MAP[c])){list.push({idx:i,pref:CITY_MAP[c],city:/[市区町村]$/.test(c)?c:c+"市"});}}
+    list.sort((a,b)=>a.idx-b.idx);
+  }
+  return list;
+}
+function parseFree(){
+  const t=normalize($("#free").value||"");const det=[];
+  // 商品
+  let prod=null;
+  if(/金庫/.test(t))prod="金庫";
+  else if(/複合機|コピー機|コピー複合機|複合コピー機/.test(t))prod="複合機（コピー機）";
+  else if(/セミコン|フルコン|コンサートグランド|コンサート/i.test(t))prod="セミコン・フルコン";
+  else if(/GP\s*[67]|グランド.*(大型|コンサート|特大)/i.test(t))prod="GP6-7";
+  else if(/GP\s*[45]/i.test(t))prod="GP4-5";
+  else if(/GP\s*[123]|グランド|grand/i.test(t))prod="GP1-3";
+  else if(/アップライト|UP\b|upright/i.test(t))prod="UP";
+  if(prod){$("#prod").value=prod;det.push(["商品："+prod,""]);}else{$("#prod").value="UP";det.push(["商品：検出できず→UP（要確認）","none"]);}
+  updateProdUI();
+  // 金庫・複合機の重量（kg）
+  if(HEAVY.indexOf($("#prod").value)>=0){
+    const wm=t.match(/(\d+)\s*(?:kg|ｋｇ|キロ(?!メ))/i);
+    if(wm){const kg=+wm[1];const b=[150,200,250,300,400,500].find(x=>kg<=x)||500;$("#weight").value=b;det.push(["重量："+kg+"kg（〜"+b+"kg区分）",kg>500?"warn":""]);}
+  }
+
+  // 発着地
+  const locs=detectLocations(t);
+  function setEP(side,pref,city){if(pref){$("#"+side+"_pref").value=pref;updateCap(side);}$("#"+side+"_city").value=city||"";}
+  if(locs.length>=2){
+    setEP("o",locs[0].pref,locs[0].city);
+    setEP("d",locs[locs.length-1].pref,locs[locs.length-1].city);
+    det.push(["発："+locs[0].pref+(locs[0].city||""),""]);
+    det.push(["着："+locs[locs.length-1].pref+(locs[locs.length-1].city||""),""]);
+  }else if(locs.length===1){
+    setEP("d",locs[0].pref,locs[0].city);
+    det.push(["着："+locs[0].pref+(locs[0].city||""),""]);
+    det.push(["発：検出できず（手入力してください）","none"]);
+  }else{
+    det.push(["発着地：検出できず（手入力してください）","none"]);
+  }
+  refreshMode();
+
+  // 移動距離
+  const km=t.match(/(\d+)\s*(?:km|ｷﾛ|キロ)/i);
+  if(km){$("#move_km").value=km[1];det.push(["移動距離："+km[1]+"km",""]);}else{$("#move_km").value=0;}
+
+  // 特殊・付帯
+  if(/階段|かいだん|吊(り|上げ)?|クレーン|ユニック/i.test(t)){$("#kaidan").checked=true;det.push(["階段/吊り",""]);}else{$("#kaidan").checked=false;}
+  // 階数（階段の回数）：本文中の「◯階/◯回」の最大値
+  if($("#kaidan").checked){const fl=[...t.matchAll(/(\d+)\s*[階回]/g)].map(m=>+m[1]).filter(n=>n>0&&n<20);$("#kaidan_n").value=fl.length?Math.max(...fl):2;if(fl.length&&Math.max(...fl)>2)det.push(["階数："+Math.max(...fl)+"階",""]);}else{$("#kaidan_n").value=2;}
+  // 石段
+  const ishiM=t.match(/石段\D{0,4}(\d+)\s*段|(\d+)\s*段\D{0,4}石段/);
+  if(/石段/.test(t)){const sv=ishiM?(ishiM[1]||ishiM[2]):0;$("#ishidan").value=sv;det.push(["石段"+(sv?("："+sv+"段"):"（段数を入力してください）"),sv?"":"warn"]);}else{$("#ishidan").value=0;}
+  // 横持担ぎ
+  const ykM=t.match(/横持ち?\D{0,6}(\d+)\s*m|(\d+)\s*m\D{0,6}横持/i);
+  if(/横持/.test(t)){const yv=ykM?(ykM[1]||ykM[2]):0;$("#yokomochi").value=yv;det.push(["横持担ぎ"+(yv?("："+yv+"m"):"（距離を入力してください）"),yv?"":"warn"]);}else{$("#yokomochi").value=0;}
+  const evPos=/エレベータ|ｴﾚﾍﾞｰﾀ|エレベーター|\bEV\b/i.test(t);
+  const evNeg=/エレベータ[ーｰ]?\s*(なし|無し|不可|ない|使えな)|EV\s*(なし|無し|不可|ない)|エレベータ[ーｰ]?の?ない/i.test(t);
+  if(evPos&&!evNeg){$("#ev").checked=true;det.push(["エレベーター",""]);}else{$("#ev").checked=false;if(evPos&&evNeg)det.push(["エレベーターなし→加算せず","none"]);}
+  const nin=t.match(/(?:作業員|人員|応援|増員)\D{0,4}(\d+)\s*名?|(\d+)\s*名(?:追加|増員)/);
+  if(nin){const n=nin[1]||nin[2];$("#nin").value=n;det.push(["人員追加："+n+"名",""]);}else{$("#nin").value=0;}
+  const setChk=(id,re,label)=>{if(re.test(t)){$("#"+id).checked=true;det.push([label,""]);}else{$("#"+id).checked=false;}};
+  setChk("time",/時間指定|時間帯指定|着(け)?時間|午前指定|午後指定|時間厳守/i,"時間指定");
+  setChk("shitami",/下見|事前確認/i,"下見");
+  setChk("shukin",/集金|代引|代金引換/i,"代行集金");
+  if(/クリーニング|清掃|磨き/i.test(t)){$("#clean").value=(prod&&prod!=="UP")?"GP":"UP";det.push(["クリーニング",""]);}else{$("#clean").value="";}
+  if(/調律/i.test(t)){$("#tune").value=(prod&&prod!=="UP")?"GP":"UP";det.push(["調律",""]);}else{$("#tune").value="";}
+  const luxRe=/スタインウェイ|steinway|ベーゼン|ベヒシュタイン|ファツィオリ|fazioli|高級|高額/i;
+  if(luxRe.test(t)){$("#luxury").checked=true;det.push(["高級品割増","warn"]);}else{$("#luxury").checked=false;}
+  const dp=$("#d_pref").value,op=$("#o_pref").value;
+  if((WINTER.indexOf(dp)>=0||WINTER.indexOf(op)>=0)&&/冬|雪|12月|1月|2月|3月/.test(t)){$("#winter").checked=true;det.push(["冬季割増（対象地域）","warn"]);}else{$("#winter").checked=false;}
+
+  let html='<span class="chip none">🔎 検出結果（下のフォームに反映済み。誤りは直して再計算）</span>';
+  det.forEach(d=>{html+='<span class="chip '+(d[1]||"")+'">'+esc(d[0])+'</span>';});
+  $("#detected").innerHTML=html;
+  compute();
+  // 地点から距離を自動取得（移動距離が本文にあればそれを優先）
+  autoDistances(!!km);
+}
+$("#parseBtn").onclick=parseFree;
+$("#clearBtn").onclick=()=>{$("#free").value="";$("#detected").innerHTML="";};
+
+/* ============ PDF（IndexedDB永続化＋pdf.js表示） ============ */
+let idb=null;
+function openIdb(){return new Promise((res,rej)=>{const r=indexedDB.open("nc_ryokin_pdf",1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains("pdf"))r.result.createObjectStore("pdf");};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function idbPut(k,blob){idb=idb||await openIdb();return new Promise((res,rej)=>{const tx=idb.transaction("pdf","readwrite");tx.objectStore("pdf").put(blob,k);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+async function idbGet(k){idb=idb||await openIdb();return new Promise((res,rej)=>{const tx=idb.transaction("pdf","readonly");const rq=tx.objectStore("pdf").get(k);rq.onsuccess=()=>res(rq.result||null);rq.onerror=()=>rej(rq.error);});}
+
+let pdfDoc=null,zoom=1,baseW=520;
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+async function renderPdf(){
+  const box=$("#pdfbox");if(!pdfDoc)return;
+  box.innerHTML="";const dpr=window.devicePixelRatio||1;baseW=Math.max(280,(box.clientWidth||520)-24);
+  for(let i=1;i<=pdfDoc.numPages;i++){
+    const page=await pdfDoc.getPage(i);const vp1=page.getViewport({scale:1}),fit=baseW/vp1.width;
+    const vp=page.getViewport({scale:fit*zoom*dpr});const cv=document.createElement("canvas");
+    cv.width=vp.width;cv.height=vp.height;cv.style.width=Math.round(vp.width/dpr)+"px";cv.style.height=Math.round(vp.height/dpr)+"px";
+    await page.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;box.appendChild(cv);
+  }
+  $("#zlbl").textContent=Math.round(zoom*100)+"%";
+}
+async function showPdfBlob(blob){
+  try{const buf=await blob.arrayBuffer();pdfDoc=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;zoom=1;await renderPdf();}
+  catch(e){$("#pdfbox").innerHTML='<div class="empty">PDF表示に失敗しました（初回はネット接続が必要）。<br>'+esc(String(e))+'</div>';}
+}
+async function loadPdfFor(tname){
+  pdfDoc=null;const blob=await idbGet("pdf::"+tname);
+  if(blob){showPdfBlob(blob);}
+  else{$("#pdfbox").innerHTML='<div class="empty">「'+esc(tname)+'」のPDFは未読込です。<br>「⬆ PDF読込」から選択、またはこの枠にドラッグ＆ドロップしてください。<br>（一度読み込めば、次回以降も自動で表示されます）</div>';}
+}
+async function acceptPdf(file){
+  if(!file||(!/pdf$/i.test(file.type)&&!/\.pdf$/i.test(file.name))){alert("PDFファイルを選んでください。");return;}
+  const tname=$("#table").value;
+  try{await idbPut("pdf::"+tname,file);}catch(e){}
+  showPdfBlob(file);
+}
+$("#pdfFile").onchange=e=>{if(e.target.files&&e.target.files[0]){acceptPdf(e.target.files[0]);e.target.value="";}};
+$("#zin").onclick=()=>{zoom=Math.min(4,zoom+0.25);renderPdf();};
+$("#zout").onclick=()=>{zoom=Math.max(0.4,zoom-0.25);renderPdf();};
+const pb=$("#pdfbox");
+["dragover","dragenter"].forEach(ev=>pb.addEventListener(ev,e=>{e.preventDefault();pb.style.outline="3px dashed #ffd479";}));
+["dragleave","drop"].forEach(ev=>pb.addEventListener(ev,e=>{e.preventDefault();pb.style.outline="";}));
+pb.addEventListener("drop",e=>{const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)acceptPdf(f);});
+
+/* ============ 起動 ============ */
+$("#pdfTitle").textContent=$("#table").value+" 料金表";
+loadPdfFor($("#table").value);
+</script>
+</body>
+</html>
