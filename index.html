@@ -187,19 +187,26 @@
         </div>
 
         <hr class="sep">
-        <div class="fgroup"><label class="fl">特殊作業</label>
-          <div class="row">
+        <div class="fgroup"><label class="fl">特殊作業（積地・着地それぞれ）</label>
+          <div class="row" style="margin-top:0">
+            <b style="font-size:.78rem;color:#b07a00;margin-right:4px">■積地（引取先）</b>
             <label class="chk"><input type="checkbox" id="kaidan"> 階段/吊り</label>
             <span class="num">階数 <input type="number" id="kaidan_n" value="2" min="1"> 階</span>
-            <span class="hintline" style="margin-top:0">※2階まで基本・3階目以降は階増し</span>
-          </div>
-          <div class="row" style="margin-top:6px">
             <span class="num">石段 <input type="number" id="ishidan" value="0" min="0"> 段</span>
-            <label class="chk"><input type="checkbox" id="ev"> エレベーター</label>
+            <label class="chk"><input type="checkbox" id="ev"> EV</label>
+            <span class="num">横持 <input type="number" id="yokomochi" value="0" min="0"> m</span>
           </div>
           <div class="row" style="margin-top:6px">
-            <span class="num">横持担ぎ <input type="number" id="yokomochi" value="0" min="0"> m<span class="hintline" style="margin:0 0 0 3px">(30m毎)</span></span>
-            <span class="num">人員追加 <input type="number" id="nin" value="0" min="0"> 名</span>
+            <b style="font-size:.78rem;color:#2470c0;margin-right:4px">■着地（届け先）</b>
+            <label class="chk"><input type="checkbox" id="kaidan2"> 階段/吊り</label>
+            <span class="num">階数 <input type="number" id="kaidan_n2" value="2" min="1"> 階</span>
+            <span class="num">石段 <input type="number" id="ishidan2" value="0" min="0"> 段</span>
+            <label class="chk"><input type="checkbox" id="ev2"> EV</label>
+            <span class="num">横持 <input type="number" id="yokomochi2" value="0" min="0"> m</span>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <span class="num">人員追加 <input type="number" id="nin" value="0" min="0"> 名（現場全体）</span>
+            <span class="hintline" style="margin:0 0 0 3px">※階段は2階まで基本・3階目以降は階増し（30m毎で横持）</span>
           </div></div>
 
         <div class="fgroup"><label class="fl">付帯作業</label>
@@ -369,30 +376,32 @@ function compute(){
   const specialProd=heavy?wInfo.cat:prod;
   const S=(specialProd==null)?null:T.special[specialProd];
   const F=T.futai;const opt=[];
+  const anySpecial=chk("kaidan")||chk("kaidan2")||(+val("ishidan"))>0||(+val("ishidan2"))>0||chk("ev")||chk("ev2")||(+val("yokomochi"))>0||(+val("yokomochi2"))>0||(+val("nin"))>0;
   if(S===null){
-    if(chk("kaidan")||(+val("ishidan"))>0||chk("ev")||(+val("yokomochi"))>0||(+val("nin"))>0)
-      warn.push((heavy?"この重量区分（別途協議）":prod)+"の特殊作業料金は「都度見積」です。原本で確認してください。");
+    if(anySpecial)warn.push((heavy?"この重量区分（別途協議）":prod)+"の特殊作業料金は「都度見積」です。原本で確認してください。");
   }else{
-    // 階段/吊り＋階増し（2回まで基本・3回目以降は1回ごとに階増し）
-    if(chk("kaidan")){opt.push(["階段/吊り",S.kaidan]);const n=+val("kaidan_n")||0;if(n>2)opt.push(["階増し（"+(n-2)+"階分×"+fmt(S.kaimashi)+"）",S.kaimashi*(n-2)]);}
-    // 石段（会社で構造が違う：引越=6〜10段＋5段毎／工房=6〜10段・11〜15段・16段〜10段毎）
-    const steps=+val("ishidan")||0;
-    if(steps>0){let ishi=0,lbl="石段（"+steps+"段）";
-      if(T.ishidanType==="kobo"){
-        if(steps<=10){ishi=S.ishi6;}
-        else if(steps<=15){ishi=S.ishi11;}
-        else{const ex=Math.ceil((steps-15)/10);ishi=S.ishi11+ex*S.ishi16;lbl="石段（"+steps+"段：11〜15段＋16段〜10段毎×"+ex+"）";}
-      }else{
-        if(steps<=5){ishi=S.ishi5;}
-        else if(steps<=10){ishi=S.ishi6;}
-        else{const ex=Math.ceil((steps-10)/5);ishi=S.ishi6+ex*S.ishi5;lbl="石段（"+steps+"段：6〜10段＋5段毎×"+ex+"）";}
+    // 積地・着地それぞれで階段/吊り・石段・EV・横持を計算（両方に発生し得る）
+    const specialFor=(suf,loc)=>{
+      if(chk("kaidan"+suf)){opt.push([loc+"階段/吊り",S.kaidan]);const n=+val("kaidan_n"+suf)||0;if(n>2)opt.push([loc+"階増し（"+(n-2)+"階分×"+fmt(S.kaimashi)+"）",S.kaimashi*(n-2)]);}
+      const steps=+val("ishidan"+suf)||0;
+      if(steps>0){let ishi=0,lbl=loc+"石段（"+steps+"段）";
+        if(T.ishidanType==="kobo"){
+          if(steps<=10){ishi=S.ishi6;}
+          else if(steps<=15){ishi=S.ishi11;}
+          else{const ex=Math.ceil((steps-15)/10);ishi=S.ishi11+ex*S.ishi16;lbl=loc+"石段（"+steps+"段：11〜15段＋16段〜10段毎×"+ex+"）";}
+        }else{
+          if(steps<=5){ishi=S.ishi5;}
+          else if(steps<=10){ishi=S.ishi6;}
+          else{const ex=Math.ceil((steps-10)/5);ishi=S.ishi6+ex*S.ishi5;lbl=loc+"石段（"+steps+"段：6〜10段＋5段毎×"+ex+"）";}
+        }
+        opt.push([lbl,ishi]);
       }
-      opt.push([lbl,ishi]);
-    }
-    if(chk("ev"))opt.push(["エレベーター",S.ev]);
-    // 横持担ぎ（30m毎）
-    const ym=+val("yokomochi")||0;
-    if(ym>0){if(S.yoko==null){warn.push(prod+"の横持担ぎ料金は表に記載がありません。原本で確認してください。");}else{const u=Math.ceil(ym/30);opt.push(["横持担ぎ（"+ym+"m：30m毎×"+u+"）",S.yoko*u]);}}
+      if(chk("ev"+suf))opt.push([loc+"エレベーター",S.ev]);
+      const ym=+val("yokomochi"+suf)||0;
+      if(ym>0){if(S.yoko==null){warn.push(prod+"の横持担ぎ料金は表に記載がありません。原本で確認してください。");}else{const u=Math.ceil(ym/30);opt.push([loc+"横持担ぎ（"+ym+"m：30m毎×"+u+"）",S.yoko*u]);}}
+    };
+    specialFor("","積地：");
+    specialFor("2","着地：");
     const nin=+val("nin")||0;if(nin>0)opt.push(["人員追加 "+nin+"名",S.nin*nin]);
   }
   // 付帯
@@ -507,7 +516,7 @@ updateProdUI();
 // 協力会社手配ON→集荷/返却を自動チェック、OFF→外す
 $("#kyoryoku").addEventListener("change",()=>{const on=$("#kyoryoku").checked;$("#shuka2").checked=on;$("#henkyaku").checked=on;compute();});
 // フォームの変更で即再計算
-["prod","weight","o_km","d_km","move_km","kaidan","kaidan_n","ishidan","ev","yokomochi","nin","time","shitami","shitami_plus","shukin","clean","tune","kyoryoku","shuka2","henkyaku","winter","luxury"].forEach(id=>{const el=$("#"+id);if(el)el.addEventListener("change",compute);});
+["prod","weight","o_km","d_km","move_km","kaidan","kaidan_n","ishidan","ev","yokomochi","kaidan2","kaidan_n2","ishidan2","ev2","yokomochi2","nin","time","shitami","shitami_plus","shukin","clean","tune","kyoryoku","shuka2","henkyaku","winter","luxury"].forEach(id=>{const el=$("#"+id);if(el)el.addEventListener("change",compute);});
 // 下見チェックで「＋追加額」欄を出す
 $("#shitami").addEventListener("change",()=>{const b=$("#shitami_plusbox");if(b)b.style.display=$("#shitami").checked?"":"none";});
 $("#shitami_plus").addEventListener("input",compute);
@@ -582,6 +591,8 @@ function parseFree(){
   if(evPos&&!evNeg){$("#ev").checked=true;det.push(["エレベーター",""]);}else{$("#ev").checked=false;if(evPos&&evNeg)det.push(["エレベーターなし→加算せず","none"]);}
   const nin=t.match(/(?:作業員|人員|応援|増員)\D{0,4}(\d+)\s*名?|(\d+)\s*名(?:追加|増員)/);
   if(nin){const n=nin[1]||nin[2];$("#nin").value=n;det.push(["人員追加："+n+"名",""]);}else{$("#nin").value=0;}
+  // 特殊作業は自由入力からは積地側に反映（着地はリセット→必要なら手入力）
+  $("#kaidan2").checked=false;$("#ev2").checked=false;$("#kaidan_n2").value=2;$("#ishidan2").value=0;$("#yokomochi2").value=0;
   const setChk=(id,re,label)=>{if(re.test(t)){$("#"+id).checked=true;det.push([label,""]);}else{$("#"+id).checked=false;}};
   setChk("time",/時間指定|時間帯指定|着(け)?時間|午前指定|午後指定|時間厳守/i,"時間指定");
   setChk("shitami",/下見|事前確認/i,"下見");
