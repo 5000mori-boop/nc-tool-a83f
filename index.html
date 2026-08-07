@@ -117,6 +117,7 @@
     <section class="pane calc">
       <div class="pane-h">🔍 見積計算</div>
       <div class="calcbody">
+        <div id="pdfNotice" style="display:none;margin:0 0 10px;padding:10px 12px;border-radius:8px;font-size:.86rem;font-weight:700;line-height:1.5"></div>
         <!-- 自由入力 -->
         <div class="free">
           <label class="fl">✉ 自由入力（メール・FAX本文を貼り付け）</label>
@@ -655,6 +656,18 @@ async function acceptPdf(file){
   const tname=$("#table").value;
   try{await idbPut("pdf::"+tname,file);}catch(e){}
   showPdfBlob(file);
+  showPdfNotice(tname);   // 読み込み時に「自動計算は連動しない」旨を表示
+}
+// PDF読込時の注意表示（現状：PDFを上げても計算金額は自動では変わらない）
+function showPdfNotice(tname){
+  const n=$("#pdfNotice");if(!n)return;
+  n.style.display="";n.style.background="#fdeaea";n.style.border="1px solid #e39b9b";n.style.color="#b02a2a";
+  n.innerHTML='⚠ <b>「'+esc(tname||"")+'」の料金表PDFを読み込みました</b>（左の表示は更新されました）。<br>'+
+    'ただし<b>右の自動計算の金額は自動では変わりません</b>（改定前の数値のままです）。<br>'+
+    '料金改定を計算に反映するには <b>森まで連絡</b> してください。'+
+    '<div style="font-weight:400;margin-top:4px">※「金額だけの改定」も「項目・構成の変更」も、現状はどちらも自動反映されません（安全のため）。</div>'+
+    '<button type="button" id="pdfNoticeX" style="margin-top:6px;font-size:.8rem;padding:2px 10px">閉じる</button>';
+  const x=$("#pdfNoticeX");if(x)x.onclick=()=>{n.style.display="none";};
 }
 $("#pdfFile").onchange=e=>{if(e.target.files&&e.target.files[0]){acceptPdf(e.target.files[0]);e.target.value="";}};
 $("#zin").onclick=()=>{zoom=Math.min(4,zoom+0.25);renderPdf();};
