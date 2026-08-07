@@ -205,7 +205,7 @@
         <div class="fgroup"><label class="fl">付帯作業</label>
           <div class="row">
             <label class="chk"><input type="checkbox" id="time"> 時間指定</label>
-            <label class="chk"><input type="checkbox" id="shitami"> 下見</label>
+            <label class="chk"><input type="checkbox" id="shitami"> 下見（基本3,000）</label><span class="num" id="shitami_plusbox" style="display:none">＋追加 <input type="number" id="shitami_plus" value="0" min="0" step="1000" style="width:90px">円（遠方等）</span>
             <label class="chk"><input type="checkbox" id="shukin"> 代行集金</label></div>
           <div class="row" style="margin-top:6px">
             <span class="num">クリーニング <select id="clean" style="width:auto"><option value="">なし</option><option value="UP">UP</option><option value="GP">GP</option></select></span>
@@ -248,13 +248,13 @@ const TABLES={
    zenkoku:{"北海道":50000,"青森":59000,"岩手":53000,"秋田":58000,"山形":49000,"宮城":44000,"福島":43000,"新潟":40000,"長野":43000,"山梨":null,"静岡":41000,"富山":49000,"石川":47000,"福井":43000,"愛知":39000,"岐阜":45000,"三重":45000,"滋賀":45000,"京都":41000,"大阪":41000,"兵庫":45000,"奈良":45000,"和歌山":47000,"岡山":42000,"広島":44000,"島根":53000,"鳥取":51000,"山口":45000,"香川":51000,"徳島":54000,"愛媛":61000,"高知":60000,"福岡":47000,"佐賀":54000,"大分":60000,"長崎":60000,"熊本":57000,"宮崎":63000,"鹿児島":63000,"沖縄":null},
    kencho:{a2150:5000,a5170:8000},move:{m10:5000,m30:7000,m50:10000,m70:12000,base71:12000},zenFreeKm:20,chibaIbarakiNC:false,ishidanType:"eng",
    special:{"UP":{kaidan:12000,kaimashi:6000,ishi6:6000,ishi5:5000,ev:2000,yoko:null,nin:15000},"GP1-3":{kaidan:18000,kaimashi:10000,ishi6:8000,ishi5:10000,ev:5000,yoko:15000,nin:20000},"GP4-5":{kaidan:21000,kaimashi:17000,ishi6:13000,ishi5:12000,ev:8000,yoko:24000,nin:20000},"GP6-7":null,"セミコン・フルコン":null},
-   futai:{time:3000,shitami:10000,shukin:2000,cleanUP:38000,cleanGP:45000,tuneUP:12000,tuneGP:15000}},
+   futai:{time:3000,shitami:3000,shukin:2000,cleanUP:38000,cleanGP:45000,tuneUP:12000,tuneGP:15000,setUP:40000,setGP:60000}},
  "工房・調律師様":{
    kanto:{"東京":21000,"埼玉":21000,"神奈川":24000,"千葉":21000,"茨城":21000,"栃木":27000,"群馬":27000},
    zenkoku:{"北海道":49000,"青森":58000,"岩手":52000,"秋田":57000,"山形":48000,"宮城":43000,"福島":42000,"新潟":39000,"長野":42000,"山梨":null,"静岡":40000,"富山":48000,"石川":46000,"福井":42000,"愛知":38000,"岐阜":44000,"三重":44000,"滋賀":44000,"京都":40000,"大阪":40000,"兵庫":44000,"奈良":44000,"和歌山":46000,"岡山":41000,"広島":43000,"島根":52000,"鳥取":50000,"山口":44000,"香川":50000,"徳島":53000,"愛媛":60000,"高知":59000,"福岡":46000,"佐賀":53000,"大分":59000,"長崎":59000,"熊本":56000,"宮崎":62000,"鹿児島":62000,"沖縄":null},
    kencho:{a2150:3000,a5170:6000},move:{m10:3000,m30:5000,m50:8000,m70:10000,base71:10000},zenFreeKm:30,chibaIbarakiNC:true,ishidanType:"kobo",
    special:{"UP":{kaidan:8000,kaimashi:5000,ishi6:5000,ishi11:8000,ishi16:5000,ev:2000,yoko:8000,nin:12000},"GP1-3":{kaidan:13000,kaimashi:7000,ishi6:7000,ishi11:13000,ishi16:7000,ev:5000,yoko:13000,nin:15000},"GP4-5":{kaidan:16000,kaimashi:9000,ishi6:9000,ishi11:16000,ishi16:9000,ev:8000,yoko:21000,nin:15000},"GP6-7":null,"セミコン・フルコン":null},
-   futai:{time:3000,shitami:3000,shukin:2000,cleanUP:38000,cleanGP:45000,tuneUP:12000,tuneGP:15000}}
+   futai:{time:3000,shitami:3000,shukin:2000,cleanUP:38000,cleanGP:45000,tuneUP:12000,tuneGP:15000,setUP:40000,setGP:60000}}
 };
 const GRAND={"UP":1,"GP1-3":1.5,"GP4-5":1.8,"GP6-7":2.5,"セミコン・フルコン":null,"金庫":1,"複合機（コピー機）":1};
 // 金庫・複合機：アップライト(UP)料金＋重量加算。cat=特殊作業の適用商品区分（nullは別途協議）
@@ -397,10 +397,11 @@ function compute(){
   }
   // 付帯
   if(chk("time"))opt.push(["時間指定",F.time]);
-  if(chk("shitami"))opt.push(["下見",F.shitami]);
+  if(chk("shitami")){const pl=+val("shitami_plus")||0;opt.push([pl>0?("下見（基本"+fmt(F.shitami)+"＋追加"+fmt(pl)+"）"):"下見",F.shitami+pl]);}
   if(chk("shukin"))opt.push(["代行集金",F.shukin]);
-  const cl=val("clean");if(cl)opt.push(["クリーニング（"+cl+"）",cl==="UP"?F.cleanUP:F.cleanGP]);
-  const tu=val("tune");if(tu)opt.push(["調律（"+tu+"）",tu==="UP"?F.tuneUP:F.tuneGP]);
+  const cl=val("clean"),tu=val("tune");
+  if(cl&&tu){const tier=(cl==="UP"&&tu==="UP")?"UP":"GP";opt.push(["セット（クリーニング＋調律・"+tier+"）",tier==="UP"?F.setUP:F.setGP]);warn.push("クリーニング＋調律は【セット料金】を適用しました。原本のセット額と突き合わせてください。");}
+  else{if(cl)opt.push(["クリーニング（"+cl+"）",cl==="UP"?F.cleanUP:F.cleanGP]);if(tu)opt.push(["調律（"+tu+"）",tu==="UP"?F.tuneUP:F.tuneGP]);}
   // 協力会社手配（御社=NC集荷/返却）UP系5,000・GP系10,000/件
   if(chk("kyoryoku")){const fee=/^(GP|セミコン)/.test(prod)?10000:5000;const t2=fee===10000?"GP":"UP";
     if(chk("shuka2"))opt.push(["協力会社 集荷（"+t2+"）",fee]);
@@ -408,9 +409,13 @@ function compute(){
   if(opt.length){rows.push(["── 特殊作業・付帯 ──","","grp"]);opt.forEach(o=>{rows.push(o);total+=o[1];});}
 
   if(chk("winter")||chk("luxury")){
-    rows.push(["── 割増 ──","","grp"]);
-    if(chk("winter")){const add=total*0.2;rows.push(["冬季割増（小計 ×1.2）",add,"mul"]);total+=add;}
-    if(chk("luxury")){const add=total*0.5;rows.push(["高級品割増（小計 ×1.5）",add,"mul"]);total+=add;}
+    // 割増は「基本料（基本料金＋グランド割増／重量加算）」のみに掛ける。距離・特殊作業・付帯は対象外。
+    const grandAdd=(!heavy&&gm&&gm!==1)?baseTransport*(gm-1):0;
+    const weightAdd=heavy?(wInfo?wInfo.add:0):0;
+    const baseFee=baseTransport+grandAdd+weightAdd;
+    rows.push(["── 割増（基本料のみに適用）──","","grp"]);
+    if(chk("winter")){const add=baseFee*0.2;rows.push(["冬季割増（基本料 "+fmt(baseFee)+" ×0.2）",add,"mul"]);total+=add;}
+    if(chk("luxury")){const add=baseFee*0.5;rows.push(["高級品割増（基本料 "+fmt(baseFee)+" ×0.5）",add,"mul"]);total+=add;}
   }
 
   // 描画
@@ -502,21 +507,24 @@ updateProdUI();
 // 協力会社手配ON→集荷/返却を自動チェック、OFF→外す
 $("#kyoryoku").addEventListener("change",()=>{const on=$("#kyoryoku").checked;$("#shuka2").checked=on;$("#henkyaku").checked=on;compute();});
 // フォームの変更で即再計算
-["prod","weight","o_km","d_km","move_km","kaidan","kaidan_n","ishidan","ev","yokomochi","nin","time","shitami","shukin","clean","tune","kyoryoku","shuka2","henkyaku","winter","luxury"].forEach(id=>{const el=$("#"+id);if(el)el.addEventListener("change",compute);});
+["prod","weight","o_km","d_km","move_km","kaidan","kaidan_n","ishidan","ev","yokomochi","nin","time","shitami","shitami_plus","shukin","clean","tune","kyoryoku","shuka2","henkyaku","winter","luxury"].forEach(id=>{const el=$("#"+id);if(el)el.addEventListener("change",compute);});
+// 下見チェックで「＋追加額」欄を出す
+$("#shitami").addEventListener("change",()=>{const b=$("#shitami_plusbox");if(b)b.style.display=$("#shitami").checked?"":"none";});
+$("#shitami_plus").addEventListener("input",compute);
 
 /* ============ 自由入力パーサー ============ */
 const PREF_OFFICIAL={"北海道":"北海道","青森県":"青森","岩手県":"岩手","宮城県":"宮城","秋田県":"秋田","山形県":"山形","福島県":"福島","茨城県":"茨城","栃木県":"栃木","群馬県":"群馬","埼玉県":"埼玉","千葉県":"千葉","東京都":"東京","神奈川県":"神奈川","新潟県":"新潟","富山県":"富山","石川県":"石川","福井県":"福井","山梨県":"山梨","長野県":"長野","岐阜県":"岐阜","静岡県":"静岡","愛知県":"愛知","三重県":"三重","滋賀県":"滋賀","京都府":"京都","大阪府":"大阪","兵庫県":"兵庫","奈良県":"奈良","和歌山県":"和歌山","鳥取県":"鳥取","島根県":"島根","岡山県":"岡山","広島県":"広島","山口県":"山口","徳島県":"徳島","香川県":"香川","愛媛県":"愛媛","高知県":"高知","福岡県":"福岡","佐賀県":"佐賀","長崎県":"長崎","熊本県":"熊本","大分県":"大分","宮崎県":"宮崎","鹿児島県":"鹿児島","沖縄県":"沖縄"};
-const CITY_MAP={"札幌":"北海道","仙台":"宮城","さいたま":"埼玉","横浜":"神奈川","名古屋":"愛知","京都市":"京都","大阪市":"大阪","神戸":"兵庫","広島市":"広島","北九州":"福岡","福岡市":"福岡","那覇":"沖縄","金沢":"石川"};
-// 都道府県名＋直後の市区町村をまとめて検出（助詞や県名の巻き込みを防ぐ）
+// 政令指定都市（都道府県名なしで市名だけ書かれることが多い・区まで取り込む）
+const ORD_CITY={"札幌":"北海道","仙台":"宮城","さいたま":"埼玉","千葉":"千葉","横浜":"神奈川","川崎":"神奈川","相模原":"神奈川","新潟":"新潟","静岡":"静岡","浜松":"静岡","名古屋":"愛知","京都":"京都","大阪":"大阪","堺":"大阪","神戸":"兵庫","岡山":"岡山","広島":"広島","北九州":"福岡","福岡":"福岡","熊本":"熊本"};
+// 都道府県名＋市区町村（政令市の区まで）を検出。都道府県名が無い政令市（さいたま市緑区/千葉市中央区 等）も拾う。
 function detectLocations(t){
+  const list=[],seen=new Set();
+  const add=(idx,pref,city)=>{const k=pref+"|"+city;if(pref&&!seen.has(k)){seen.add(k);list.push({idx,pref,city:city||""});}};
   const names=Object.keys(PREF_OFFICIAL).sort((a,b)=>b.length-a.length);
-  const re=new RegExp("("+names.join("|")+")([一-龥ぁ-ん]{1,6}?[市区町村])?","g");
-  const list=[];let m;
-  while((m=re.exec(t))){list.push({idx:m.index,pref:PREF_OFFICIAL[m[1]],city:m[2]||""});}
-  if(list.length<2){
-    for(const c in CITY_MAP){const i=t.indexOf(c);if(i>=0&&!list.some(l=>Math.abs(l.idx-i)<6||l.pref===CITY_MAP[c])){list.push({idx:i,pref:CITY_MAP[c],city:/[市区町村]$/.test(c)?c:c+"市"});}}
-    list.sort((a,b)=>a.idx-b.idx);
-  }
+  const reP=new RegExp("("+names.join("|")+")([一-龥ぁ-ん]{1,7}?[市区町村](?:[一-龥ぁ-ん]{1,5}?区)?)?","g");
+  let m;while((m=reP.exec(t))){add(m.index,PREF_OFFICIAL[m[1]],m[2]||"");}
+  for(const c in ORD_CITY){const re=new RegExp(c+"市((?:[一-龥ぁ-ん]{1,5}?区))?","g");let mm;while((mm=re.exec(t))){add(mm.index,ORD_CITY[c],c+"市"+(mm[1]||""));}}
+  list.sort((a,b)=>a.idx-b.idx);
   return list;
 }
 function parseFree(){
@@ -588,7 +596,7 @@ function parseFree(){
   let html='<span class="chip none">🔎 検出結果（下のフォームに反映済み。誤りは直して再計算）</span>';
   det.forEach(d=>{html+='<span class="chip '+(d[1]||"")+'">'+esc(d[0])+'</span>';});
   $("#detected").innerHTML=html;
-  compute();
+  autoDistances(!!km);   // 発着地が埋まったら県庁距離・移動距離を自動計算（本文にkm記載があればそれを優先）
   // 地点から距離を自動取得（移動距離が本文にあればそれを優先）
   autoDistances(!!km);
 }
