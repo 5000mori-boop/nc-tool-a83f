@@ -95,6 +95,7 @@
     <div class="sp"></div>
     <span class="tlabel">料金表</span>
     <select id="table"></select>
+    <button id="setBtn" title="料金の数値を編集（管理用）" style="margin-left:8px;background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:7px;padding:3px 8px;cursor:pointer;font-size:.9rem">⚙</button>
   </header>
 
   <div class="sheet">
@@ -238,6 +239,27 @@
     </section>
   </div>
 
+  <!-- 料金設定（隠し・管理用）。メイン画面には出さず、⚙からこの別窓を開く -->
+  <div id="ovset" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;padding:18px;overflow:auto">
+    <div style="max-width:920px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #e5e8ee">
+        <b style="font-size:1.05rem">⚙ 料金設定（管理用）</b>
+        <button id="setClose" style="border:0;background:#eef1f6;border-radius:7px;padding:5px 12px;cursor:pointer">閉じる</button>
+      </div>
+      <div style="padding:10px 18px;background:#fff8e1;border-bottom:1px solid #f0e3b0;font-size:.82rem;color:#8a6d00;line-height:1.5">
+        数値を変えて「保存」すると<b>この端末の計算に即反映</b>されます（税別）。<b>全員に反映</b>したいときは「📤 書き出し」で出力し、森に渡してください（森が公開へ取り込むと全端末に配布されます）。
+      </div>
+      <div id="setBody" style="padding:12px 18px;max-height:62vh;overflow:auto"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;padding:14px 18px;border-top:1px solid #e5e8ee;align-items:center">
+        <button id="setSave" style="background:#1f8a4c;color:#fff;border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer">💾 保存（この端末に反映）</button>
+        <button id="setExport" style="background:#2470c0;color:#fff;border:0;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer">📤 書き出し（森に渡す）</button>
+        <button id="setImport" style="background:#eef1f6;border:1px solid #cdd3dd;border-radius:8px;padding:8px 14px;cursor:pointer">📥 取り込み</button>
+        <button id="setReset" style="background:#fbe9e9;border:1px solid #e3b3b3;color:#b02a2a;border-radius:8px;padding:8px 14px;cursor:pointer;margin-left:auto">初期値に戻す</button>
+        <span id="setMsg" style="font-size:.8rem;color:#2e7d32;font-weight:700"></span>
+      </div>
+    </div>
+  </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
@@ -250,7 +272,7 @@ const KANTO=["東京","埼玉","神奈川","千葉","茨城","栃木","群馬"];
 const ZORDER=["北海道","青森","岩手","秋田","山形","宮城","福島","新潟","長野","山梨","静岡","富山","石川","福井","愛知","岐阜","三重","滋賀","京都","大阪","兵庫","奈良","和歌山","岡山","広島","島根","鳥取","山口","香川","徳島","愛媛","高知","福岡","佐賀","大分","長崎","熊本","宮崎","鹿児島","沖縄"];
 // 県庁所在地（市）
 const CAP={"北海道":"札幌市","青森":"青森市","岩手":"盛岡市","秋田":"秋田市","山形":"山形市","宮城":"仙台市","福島":"福島市","茨城":"水戸市","栃木":"宇都宮市","群馬":"前橋市","埼玉":"さいたま市","千葉":"千葉市","東京":"新宿区","神奈川":"横浜市","新潟":"新潟市","富山":"富山市","石川":"金沢市","福井":"福井市","山梨":"甲府市","長野":"長野市","岐阜":"岐阜市","静岡":"静岡市","愛知":"名古屋市","三重":"津市","滋賀":"大津市","京都":"京都市","大阪":"大阪市","兵庫":"神戸市","奈良":"奈良市","和歌山":"和歌山市","鳥取":"鳥取市","島根":"松江市","岡山":"岡山市","広島":"広島市","山口":"山口市","徳島":"徳島市","香川":"高松市","愛媛":"松山市","高知":"高知市","福岡":"福岡市","佐賀":"佐賀市","長崎":"長崎市","熊本":"熊本市","大分":"大分市","宮崎":"宮崎市","鹿児島":"鹿児島市","沖縄":"那覇市"};
-const TABLES={
+const DEFAULT_TABLES={
  "引越業者様":{
    kanto:{"東京":25000,"埼玉":25000,"神奈川":28000,"千葉":28000,"茨城":33000,"栃木":33000,"群馬":33000},
    zenkoku:{"北海道":50000,"青森":59000,"岩手":53000,"秋田":58000,"山形":49000,"宮城":44000,"福島":43000,"新潟":40000,"長野":43000,"山梨":null,"静岡":41000,"富山":49000,"石川":47000,"福井":43000,"愛知":39000,"岐阜":45000,"三重":45000,"滋賀":45000,"京都":41000,"大阪":41000,"兵庫":45000,"奈良":45000,"和歌山":47000,"岡山":42000,"広島":44000,"島根":53000,"鳥取":51000,"山口":45000,"香川":51000,"徳島":54000,"愛媛":61000,"高知":60000,"福岡":47000,"佐賀":54000,"大分":60000,"長崎":60000,"熊本":57000,"宮崎":63000,"鹿児島":63000,"沖縄":null},
@@ -264,6 +286,11 @@ const TABLES={
    special:{"UP":{kaidan:8000,kaimashi:5000,ishi6:5000,ishi11:8000,ishi16:5000,ev:2000,yoko:8000,nin:12000},"GP1-3":{kaidan:13000,kaimashi:7000,ishi6:7000,ishi11:13000,ishi16:7000,ev:5000,yoko:13000,nin:15000},"GP4-5":{kaidan:16000,kaimashi:9000,ishi6:9000,ishi11:16000,ishi16:9000,ev:8000,yoko:21000,nin:15000},"GP6-7":null,"セミコン・フルコン":null},
    futai:{time:3000,shitami:3000,shukin:2000,cleanUP:38000,cleanGP:45000,tuneUP:12000,tuneGP:15000,setUP:40000,setGP:60000}}
 };
+// 料金の数値は既定値(DEFAULT_TABLES)を元に、端末保存(localStorage)の改定値を上書きして使う
+function ryDeepClone(o){return JSON.parse(JSON.stringify(o));}
+function ryDeepMerge(dst,src){for(const k in src){const v=src[k];if(v&&typeof v==="object"&&!Array.isArray(v)){if(!dst[k]||typeof dst[k]!=="object")dst[k]={};ryDeepMerge(dst[k],v);}else{dst[k]=v;}}return dst;}
+function loadRates(){try{const s=JSON.parse(localStorage.getItem("nc_ryokin_rates")||"null");const base=ryDeepClone(DEFAULT_TABLES);return s?ryDeepMerge(base,s):base;}catch(e){return ryDeepClone(DEFAULT_TABLES);}}
+let TABLES=loadRates();
 const GRAND={"UP":1,"GP1-3":1.5,"GP4-5":1.8,"GP6-7":2.5,"セミコン・フルコン":null,"金庫":1,"複合機（コピー機）":1};
 // 金庫・複合機：アップライト(UP)料金＋重量加算。cat=特殊作業の適用商品区分（nullは別途協議）
 const HEAVY=["金庫","複合機（コピー機）"];
@@ -676,6 +703,53 @@ const pb=$("#pdfbox");
 ["dragover","dragenter"].forEach(ev=>pb.addEventListener(ev,e=>{e.preventDefault();pb.style.outline="3px dashed #ffd479";}));
 ["dragleave","drop"].forEach(ev=>pb.addEventListener(ev,e=>{e.preventDefault();pb.style.outline="";}));
 pb.addEventListener("drop",e=>{const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)acceptPdf(f);});
+
+/* ============ 料金設定（隠し・管理用）============ */
+const RY_SEC=[
+  {k:"kanto",t:"基本料金（関東・都県別）"},
+  {k:"zenkoku",t:"全国輸送料金（都道府県別）"},
+  {k:"kencho",t:"県庁距離加算",lab:{a2150:"21〜50km",a5170:"51〜70km"}},
+  {k:"move",t:"移動料金（関東内）",lab:{m10:"0〜10km",m30:"11〜30km",m50:"31〜50km",m70:"51〜70km",base71:"71km〜(基準)"}}
+];
+function ryInput(path,v){
+  if(v===null||v===undefined)return '<input type="text" data-rp="'+esc(path)+'" value="都度" placeholder="都度" style="width:100%">';
+  return '<input type="number" data-rp="'+esc(path)+'" value="'+v+'" style="width:100%">';
+}
+function ryGrid(tn,prefix,obj,lab){
+  let h='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px">';
+  for(const k in obj){const v=obj[k];if(v&&typeof v==="object")continue;h+='<label style="font-size:.72rem;color:#456">'+esc((lab&&lab[k])||k)+ryInput(tn+"."+prefix+"."+k,v)+'</label>';}
+  return h+'</div>';
+}
+function buildSettingsForm(){
+  let h="";
+  ["引越業者様","工房・調律師様"].forEach((tn,ti)=>{
+    const T=TABLES[tn];if(!T)return;
+    h+='<details'+(ti===0?" open":"")+' style="margin-bottom:10px"><summary style="font-weight:800;cursor:pointer;padding:6px 0;font-size:.95rem">'+esc(tn)+'</summary>';
+    RY_SEC.forEach(s=>{if(T[s.k]){h+='<div style="margin:6px 0 12px"><div style="font-weight:700;font-size:.8rem;color:#345;margin:4px 0 6px">'+esc(s.t)+'</div>'+ryGrid(tn,s.k,T[s.k],s.lab)+'</div>';}});
+    for(const p in T.special){if(T.special[p]){h+='<div style="margin:6px 0 12px"><div style="font-weight:700;font-size:.8rem;color:#345;margin:4px 0 6px">特殊作業：'+esc(p)+'</div>'+ryGrid(tn,"special."+p,T.special[p])+'</div>';}}
+    if(T.futai)h+='<div style="margin:6px 0 12px"><div style="font-weight:700;font-size:.8rem;color:#345;margin:4px 0 6px">付帯</div>'+ryGrid(tn,"futai",T.futai)+'</div>';
+    h+='</details>';
+  });
+  $("#setBody").innerHTML=h;
+}
+function rySetByPath(root,path,val){const p=path.split(".");let o=root;for(let i=0;i<p.length-1;i++)o=o[p[i]];o[p[p.length-1]]=val;}
+function collectSettings(){
+  document.querySelectorAll("#setBody [data-rp]").forEach(inp=>{
+    const raw=String(inp.value).trim();
+    const val=(raw===""||raw==="都度"||raw==="null"||raw==="-")?null:(isNaN(+raw)?null:(+raw));
+    rySetByPath(TABLES,inp.dataset.rp,val);
+  });
+}
+$("#setBtn").onclick=()=>{buildSettingsForm();$("#setMsg").textContent="";$("#ovset").style.display="";};
+$("#setClose").onclick=()=>{$("#ovset").style.display="none";};
+$("#ovset").addEventListener("click",e=>{if(e.target.id==="ovset")$("#ovset").style.display="none";});
+$("#setSave").onclick=()=>{collectSettings();localStorage.setItem("nc_ryokin_rates",JSON.stringify(TABLES));compute();$("#setMsg").textContent="✓ 保存しました（この端末に反映）";};
+$("#setReset").onclick=()=>{if(!confirm("料金を初期値（組み込みの値）に戻します。この端末の変更は消えます。よろしいですか？"))return;localStorage.removeItem("nc_ryokin_rates");TABLES=loadRates();buildSettingsForm();compute();$("#setMsg").textContent="✓ 初期値に戻しました";};
+$("#setExport").onclick=()=>{collectSettings();const json=JSON.stringify(TABLES,null,1);
+  try{const ta=document.createElement("textarea");ta.value=json;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();}catch(_){}
+  try{const blob=new Blob([json],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="料金データ_書き出し.json";a.click();}catch(_){}
+  $("#setMsg").textContent="✓ 書き出しました（コピー＋ファイル保存）。このデータを森に渡すと全端末に反映されます。";};
+$("#setImport").onclick=()=>{const s=prompt("森から受け取った料金データ(JSON)を貼り付けてください。");if(!s)return;try{const o=JSON.parse(s);TABLES=ryDeepMerge(loadRates(),o);localStorage.setItem("nc_ryokin_rates",JSON.stringify(TABLES));buildSettingsForm();compute();$("#setMsg").textContent="✓ 取り込みました（この端末に反映）";}catch(e){alert("読み込めませんでした（JSONの形式をご確認ください）。");}};
 
 /* ============ 起動 ============ */
 $("#pdfTitle").textContent=$("#table").value+" 料金表";
